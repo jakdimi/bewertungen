@@ -7,7 +7,7 @@ A small (and shitty) python script to compile a nice list of of grades and other
 3. Open the grades table in Excel, and save as `.xlsx`.
 4. run 
 ```bash
-ip install openpyxl
+pip install openpyxl
 python main.py
 ``` 
 And follow the instructions.

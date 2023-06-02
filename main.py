@@ -113,7 +113,12 @@ def make_output():
     global last_empty_row
     grades_keys = get_row(grading_sheet, 1)
 
-    out_keys = ["Vorname", "Nachname", "Pkt. Gesamt", ">= 6", "< 3", "Videos"]
+    out_keys = ["Vorname", 
+                "Nachname", 
+                "Pkt. Gesamt", 
+                ">= 6", "< 3", 
+                "Videos", 
+                "bestandene Aufgaben"]
 
     set_row(out_sheet, out_keys, 1)
 
@@ -121,41 +126,58 @@ def make_output():
     while participants_sheet[f"E{row}"].value:
         email = participants_sheet[f"E{row}"].value
         groups = participants_sheet[f"F{row}"].value
+        
+        is_participant_in_group = False
         if groups is not None:
             if group_name in groups:
                 grading_row = row_of_email(email)
                 if grading_row != -1:
-                    row_content = []
-                    grades_row = get_row(grading_sheet, row_of_email(email))
-                    row_content.append(grades_row[0])
-                    row_content.append(grades_row[1])
-                    row_content.append(grades_row[6])
+                    is_participant_in_group = True
+        
+        if is_participant_in_group:
+            row_content = []
+            grades_row = get_row(grading_sheet, row_of_email(email))
+            row_content.append(grades_row[0])
+            row_content.append(grades_row[1])
+            row_content.append(grades_row[6])
 
-                    column = "H"
-                    excercise = 0
-                    exercise_failed = 0
-                    video = 0
-                    for i, value in enumerate(grades_row[7:], start=7):
-                        if "Aufgabe" in grades_keys[i] and value != "-":
-                            if "Lösung" in grades_keys[i]:
-                                if int(value) >= 1:
-                                    video += 1
-                            if "Abgabe" in grades_keys[i]:
-                                if int(value) >= 6:
-                                    excercise += 1
-                                if int(value) < 3:
-                                    exercise_failed += 1
-                                    if int(value) == 2:
-                                        print(f"{grades_row[0]} {grades_row[1]}, {grades_keys[i]}: {grades_row[i]}, {grades_keys[i+3]}: {grades_row[i+3]}")
+            excercise = 0
+            exercise_failed = 0
+            video = 0
+            for i, value in enumerate(grades_row[7:], start=7):
+                column_is_loesung = False
+                column_is_abgabe= False
+                if "Aufgabe" in grades_keys[i] and value != "-":
+                    if "Lösung" in grades_keys[i]:
+                        column_is_loesung = True
+                    if "Abgabe" in grades_keys[i]:
+                        column_is_abgabe = True
+                
+                if column_is_loesung and int(value) >= 1:
+                    video += 1
+                
+                if column_is_abgabe and int(value) >= 6:
+                    excercise += 1
 
-                        column = next_column(column)
-                    
-                    row_content.append(excercise)
-                    row_content.append(exercise_failed)
-                    row_content.append(video)
+                if column_is_abgabe and int(value) < 3:
+                    exercise_failed += 1
 
-                    set_row(out_sheet, row_content, last_empty_row)
-                    last_empty_row += 1
+                if column_is_abgabe and int(value) == 2:
+                    print(
+                        f"{grades_row[0]} {grades_row[1]}, \
+                            {grades_keys[i]}: {grades_row[i]}, \
+                            {grades_keys[i+3]}: {grades_row[i+3]}"
+                        )
+            
+            kurs_gesamt = grades_row[7]
+
+            row_content.append(excercise)
+            row_content.append(exercise_failed)
+            row_content.append(video)
+            row_content.append(kurs_gesamt)
+
+            set_row(out_sheet, row_content, last_empty_row)
+            last_empty_row += 1
         row += 1
     
     output.save(filename=f"{target_path}out.xlsx")
